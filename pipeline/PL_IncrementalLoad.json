@@ -1,7 +1,7 @@
 {
 	"name": "PL_IncrementalLoad",
 	"properties": {
-		"description": "New incremental Pipeline",
+		"description": "New incremental Pipeline Added",
 		"activities": [
 			{
 				"name": "lkp_oldwatermarkvalue",
