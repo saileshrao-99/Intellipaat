@@ -1185,7 +1185,7 @@
 							"storedProcedureParameters": {
 								"NewTime": {
 									"value": {
-										"value": "'@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
+										"value": "'@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermark.value}'",
 										"type": "Expression"
 									},
 									"type": "DateTime"
