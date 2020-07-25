@@ -1,0 +1,33 @@
+{
+	"name": "TargetDelimited_CheckFile",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_Blob_StorageAccountEUS2",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"DatasetFileName": {
+				"type": "string",
+				"defaultValue": "AllCountries.csv"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().DatasetFileName",
+					"type": "Expression"
+				},
+				"container": "target"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

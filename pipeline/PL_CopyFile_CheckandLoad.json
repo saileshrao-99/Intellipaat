@@ -1,0 +1,266 @@
+{
+	"name": "PL_CopyFile_CheckandLoad",
+	"properties": {
+		"activities": [
+			{
+				"name": "CheckFileExist",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "TargetDelimited_CheckFile",
+						"type": "DatasetReference",
+						"parameters": {
+							"DatasetFileName": {
+								"value": "@pipeline().parameters.DatasetFileName",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"exists"
+					],
+					"storeSettings": {
+						"type": "AzureBlobStorageReadSettings",
+						"recursive": true
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "IfCondition",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "CheckFileExist",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@activity('CheckFileExist').output.exist",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "CopyCSV",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 1,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".csv"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"name": "Country",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Country",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "LandArea",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "LandArea",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "Population",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Population",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "GDP",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "GDP",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "Rural",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Rural",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "Internet",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Internet",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "BirthRate",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "BirthRate",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "DeathRate",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "DeathRate",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "ElderlyPop",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "ElderlyPop",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "LifeExpectancy",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "LifeExpectancy",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "FemaleLabor",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "FemaleLabor",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "Unemployment",
+												"type": "String",
+												"physicalType": "String"
+											},
+											"sink": {
+												"name": "Unemployment",
+												"type": "String"
+											}
+										}
+									],
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SourceCSV_Parameterized",
+									"type": "DatasetReference",
+									"parameters": {
+										"DatasetFileName": "AllCountries.csv"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "TargetDelimited",
+									"type": "DatasetReference"
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"concurrency": 1,
+		"parameters": {
+			"DatasetFileName": {
+				"type": "string",
+				"defaultValue": "AllCountries.csv"
+			}
+		},
+		"annotations": []
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
