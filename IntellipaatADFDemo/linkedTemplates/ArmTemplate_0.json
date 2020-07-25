@@ -107,7 +107,10 @@
 				"annotations": [],
 				"type": "AzureSqlTable",
 				"schema": [],
-				"typeProperties": {}
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "orders"
+				}
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_Source')]"
@@ -138,7 +141,7 @@
 				],
 				"typeProperties": {
 					"schema": "dbo",
-					"table": "watermarktable"
+					"table": "orders"
 				}
 			},
 			"dependsOn": [
@@ -1125,7 +1128,7 @@
 							"source": {
 								"type": "AzureSqlSource",
 								"sqlReaderQuery": {
-									"value": "select * from orders where InsertDateTime >@{activity('lkp_oldwatermarkvalue').output,oldwatermarkvalue}\n and InsertDateTime <= @{activity('lkp_newwatermarkvalue').output.newwatermarkvalue}",
+									"value": "select * from orders where InsertDateTime >'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and InsertDateTime <= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
 									"type": "Expression"
 								},
 								"queryTimeout": "02:00:00"
@@ -1178,7 +1181,23 @@
 						},
 						"userProperties": [],
 						"typeProperties": {
-							"storedProcedureName": "[[dbo].[spSetWatermark]"
+							"storedProcedureName": "[[dbo].[spSetWatermark]",
+							"storedProcedureParameters": {
+								"NewTime": {
+									"value": {
+										"value": "'@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
+										"type": "Expression"
+									},
+									"type": "DateTime"
+								},
+								"TableName": {
+									"value": {
+										"value": "@activity('lkp_oldwatermarkvalue').output.FirstRow.tablename",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
 						},
 						"linkedServiceName": {
 							"referenceName": "LS_Azure_SQL_Target",
