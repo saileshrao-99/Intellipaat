@@ -1,0 +1,18 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "IntellipaatADFDemo"
+		},
+		"LS_AzureSQL_Source_connectionString": {
+			"value": ""
+		},
+		"LS_Azure_SQL_Target_connectionString": {
+			"value": ""
+		},
+		"LS_Blob_StorageAccountEUS2_connectionString": {
+			"value": ""
+		}
+	}
+}

@@ -1,0 +1,1199 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "IntellipaatADFDemo"
+		},
+		"LS_AzureSQL_Source_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_AzureSQL_Source'"
+		},
+		"LS_Azure_SQL_Target_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_Azure_SQL_Target'"
+		},
+		"LS_Blob_StorageAccountEUS2_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_Blob_StorageAccountEUS2'"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_CopyFile')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CopyCSV",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 1,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".csv"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Country",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "LandArea",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "LandArea",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "Population",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Population",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "GDP",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "GDP",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "Rural",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Rural",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "Internet",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Internet",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "BirthRate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "BirthRate",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "DeathRate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "DeathRate",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "ElderlyPop",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "ElderlyPop",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "LifeExpectancy",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "LifeExpectancy",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "FemaleLabor",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "FemaleLabor",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "Unemployment",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Unemployment",
+											"type": "String"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "SourceCSV",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "TargetDelimited",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"concurrency": 1,
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SourceCSV')]",
+				"[concat(variables('factoryId'), '/datasets/TargetDelimited')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_CopyFile_CheckandLoad')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CheckFileExist",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "TargetDelimited_CheckFile",
+								"type": "DatasetReference",
+								"parameters": {
+									"DatasetFileName": {
+										"value": "@pipeline().parameters.DatasetFileName",
+										"type": "Expression"
+									}
+								}
+							},
+							"fieldList": [
+								"exists"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "IfCondition",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "CheckFileExist",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@activity('CheckFileExist').output.exist",
+								"type": "Expression"
+							},
+							"ifFalseActivities": [
+								{
+									"name": "CopyCSV",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 1,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "AzureBlobStorageReadSettings",
+												"recursive": true
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobStorageWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".csv"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"mappings": [
+												{
+													"source": {
+														"name": "Country",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "Country",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "LandArea",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "LandArea",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "Population",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "Population",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "GDP",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "GDP",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "Rural",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "Rural",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "Internet",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "Internet",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "BirthRate",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "BirthRate",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "DeathRate",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "DeathRate",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "ElderlyPop",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "ElderlyPop",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "LifeExpectancy",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "LifeExpectancy",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "FemaleLabor",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "FemaleLabor",
+														"type": "String"
+													}
+												},
+												{
+													"source": {
+														"name": "Unemployment",
+														"type": "String",
+														"physicalType": "String"
+													},
+													"sink": {
+														"name": "Unemployment",
+														"type": "String"
+													}
+												}
+											],
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "SourceCSV_Parameterized",
+											"type": "DatasetReference",
+											"parameters": {
+												"DatasetFileName": "AllCountries.csv"
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "TargetDelimited",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"concurrency": 1,
+				"parameters": {
+					"DatasetFileName": {
+						"type": "string",
+						"defaultValue": "AllCountries.csv"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/TargetDelimited_CheckFile')]",
+				"[concat(variables('factoryId'), '/datasets/SourceCSV_Parameterized')]",
+				"[concat(variables('factoryId'), '/datasets/TargetDelimited')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_CopyFile_Parameterized')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "CopyCSV",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 1,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".csv"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Country",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "LandArea",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "LandArea",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "Population",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Population",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "GDP",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "GDP",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "Rural",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Rural",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "Internet",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Internet",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "BirthRate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "BirthRate",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "DeathRate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "DeathRate",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "ElderlyPop",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "ElderlyPop",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "LifeExpectancy",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "LifeExpectancy",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "FemaleLabor",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "FemaleLabor",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "Unemployment",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Unemployment",
+											"type": "String"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "SourceCSV_Parameterized",
+								"type": "DatasetReference",
+								"parameters": {
+									"DatasetFileName": "AllCountries.csv"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "TargetDelimited",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"concurrency": 1,
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SourceCSV_Parameterized')]",
+				"[concat(variables('factoryId'), '/datasets/TargetDelimited')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_IncrementalLoad')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "New incremental Pipeline ",
+				"activities": [
+					{
+						"name": "lkp_oldwatermarkvalue",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": " select TableName,WatermarkValue as oldwatermarkvalue from dbo.watermarktable where [TableName] = 'orders'",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "Azure_SQL_Target_DB_Watermark",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "lkp_newwatermarkvalue",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": " select max(InsertDateTime) as newwatermarkvalue from orders",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_SourceDB_Orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "Copy Data",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "lkp_oldwatermarkvalue",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "lkp_newwatermarkvalue",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "select * from orders where InsertDateTime >@{activity('lkp_oldwatermarkvalue').output,oldwatermarkvalue}\n and InsertDateTime <= @{activity('lkp_newwatermarkvalue').output.newwatermarkvalue}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"sink": {
+								"type": "AzureSqlSink"
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_SQL_SourceDB_Orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_SQL_TargetDB_Orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "SP_WatermarkTable",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Copy Data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[spSetWatermark]"
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_Azure_SQL_Target",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Azure_SQL_Target_DB_Watermark')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_SourceDB_Orders')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Orders')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Azure_SQL_Target_DB_Watermark')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Azure_SQL_Target",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "TableName",
+						"type": "varchar"
+					},
+					{
+						"name": "WatermarkValue",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "watermarktable"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_SourceDB_Orders')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_AzureSQL_Source",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_Source')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Orders')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Azure_SQL_Target",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "TableName",
+						"type": "varchar"
+					},
+					{
+						"name": "WatermarkValue",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "watermarktable"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SourceCSV')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Blob_StorageAccountEUS2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "AllCountries.csv",
+						"container": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SourceCSV_Parameterized')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Blob_StorageAccountEUS2",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"DatasetFileName": {
+						"type": "string",
+						"defaultValue": "AllCountries.csv"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().DatasetFileName",
+							"type": "Expression"
+						},
+						"container": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TargetDelimited')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Blob_StorageAccountEUS2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "target"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/TargetDelimited_CheckFile')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Blob_StorageAccountEUS2",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"DatasetFileName": {
+						"type": "string",
+						"defaultValue": "AllCountries.csv"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().DatasetFileName",
+							"type": "Expression"
+						},
+						"container": "target"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_AzureSQL_Source')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_AzureSQL_Source_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_Azure_SQL_Target')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_Azure_SQL_Target_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_Blob_StorageAccountEUS2')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_Blob_StorageAccountEUS2_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
