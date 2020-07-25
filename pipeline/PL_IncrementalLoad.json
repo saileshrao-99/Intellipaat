@@ -131,7 +131,23 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"storedProcedureName": "[dbo].[spSetWatermark]"
+					"storedProcedureName": "[dbo].[spSetWatermark]",
+					"storedProcedureParameters": {
+						"NewTime": {
+							"value": {
+								"value": "'@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
+								"type": "Expression"
+							},
+							"type": "DateTime"
+						},
+						"TableName": {
+							"value": {
+								"value": "@activity('lkp_oldwatermarkvalue').output.FirstRow.tablename",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
 				},
 				"linkedServiceName": {
 					"referenceName": "LS_Azure_SQL_Target",
