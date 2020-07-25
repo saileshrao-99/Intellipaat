@@ -134,6 +134,10 @@
 					"storedProcedureName": "[dbo].[spSetWatermark]",
 					"storedProcedureParameters": {
 						"NewTime": {
+							"value": {
+								"value": "'@{activity('lkp_newwatermarkvalue').output.firstrow.newwatermarkvalue}'",
+								"type": "Expression"
+							},
 							"type": "DateTime"
 						},
 						"TableName": {
