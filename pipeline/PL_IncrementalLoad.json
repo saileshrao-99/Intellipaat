@@ -80,7 +80,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "select * from orders where InsertDateTime >@{activity('lkp_oldwatermarkvalue').output,oldwatermarkvalue}\n and InsertDateTime <= @{activity('lkp_newwatermarkvalue').output.newwatermarkvalue}",
+							"value": "select * from orders where InsertDateTime >'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and InsertDateTime <= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00"
