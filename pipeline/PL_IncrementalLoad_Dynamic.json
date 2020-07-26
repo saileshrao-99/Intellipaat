@@ -169,12 +169,10 @@
 		],
 		"parameters": {
 			"TableName": {
-				"type": "string",
-				"defaultValue": "orders"
+				"type": "string"
 			},
 			"WaterMarkColumn": {
-				"type": "string",
-				"defaultValue": "InsertDateTime"
+				"type": "string"
 			}
 		},
 		"annotations": []
