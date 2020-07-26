@@ -18,6 +18,10 @@
 		"LS_Blob_StorageAccountEUS2_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_Blob_StorageAccountEUS2'"
+		},
+		"CopyFile_Event_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/9d77daff-9706-4ab3-b8e3-d5545481c2a2/resourceGroups/Intellipaat-RG/providers/Microsoft.Storage/storageAccounts/storageaccounteu2"
 		}
 	},
 	"variables": {
@@ -349,6 +353,35 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Parameterized')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Azure_SQL_Target",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"TableName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": {
+						"value": "@dataset().TableName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
 			]
 		},
 		{
@@ -1021,7 +1054,10 @@
 								"referenceName": "SourceCSV_Parameterized",
 								"type": "DatasetReference",
 								"parameters": {
-									"DatasetFileName": "AllCountries.csv"
+									"DatasetFileName": {
+										"value": "@pipeline().parameters.FileName",
+										"type": "Expression"
+									}
 								}
 							}
 						],
@@ -1035,6 +1071,11 @@
 					}
 				],
 				"concurrency": 1,
+				"parameters": {
+					"FileName": {
+						"type": "string"
+					}
+				},
 				"annotations": []
 			},
 			"dependsOn": [
@@ -1212,6 +1253,227 @@
 				"[concat(variables('factoryId'), '/datasets/DS_SQL_SourceDB_Orders')]",
 				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Orders')]",
 				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_IncrementalLoad_Dynamic')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "New incremental Pipeline ",
+				"activities": [
+					{
+						"name": "lkp_oldwatermarkvalue",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT TableName,WatermarkValue as oldwatermarkvalue from dbo.watermarktable where [TableName] = '@{pipeline().parameters.TableName}'",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "Azure_SQL_Target_DB_Watermark",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "lkp_newwatermarkvalue",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT max(@{pipeline().parameters.WaterMarkColumn}) as newwatermarkvalue FROM @{pipeline().parameters.TableName}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_SourceDB_Orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "Copy Data",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "lkp_oldwatermarkvalue",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "lkp_newwatermarkvalue",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT * FROM @{pipeline().parameters.TableName} where @{pipeline().parameters.WaterMarkColumn}>'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and @{pipeline().parameters.WaterMarkColumn}<= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"sink": {
+								"type": "AzureSqlSink"
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_SQL_SourceDB_Orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_SQL_TargetDB_Parameterized",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": {
+										"value": "@pipeline().parameters.TableName",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "SP_WatermarkTable",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Copy Data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[spSetWatermark]",
+							"storedProcedureParameters": {
+								"NewTime": {
+									"value": {
+										"value": "@activity('lkp_newwatermarkvalue').output.firstrow.newwatermarkvalue",
+										"type": "Expression"
+									},
+									"type": "DateTime"
+								},
+								"TableName": {
+									"value": {
+										"value": "@activity('lkp_oldwatermarkvalue').output.FirstRow.tablename",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_Azure_SQL_Target",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"parameters": {
+					"TableName": {
+						"type": "string"
+					},
+					"WaterMarkColumn": {
+						"type": "string"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Azure_SQL_Target_DB_Watermark')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_SourceDB_Orders')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Parameterized')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/CopyFile_Event')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "PL_CopyFile_Parameterized",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "BlobEventsTrigger",
+				"typeProperties": {
+					"blobPathBeginsWith": "/source/blobs/",
+					"ignoreEmptyBlobs": true,
+					"scope": "[parameters('CopyFile_Event_properties_typeProperties_scope')]",
+					"events": [
+						"Microsoft.Storage.BlobCreated"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PL_CopyFile_Parameterized')]"
 			]
 		}
 	]

@@ -19,6 +19,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_Blob_StorageAccountEUS2'"
 		},
+		"CopyFile_Event_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/9d77daff-9706-4ab3-b8e3-d5545481c2a2/resourceGroups/Intellipaat-RG/providers/Microsoft.Storage/storageAccounts/storageaccounteu2"
+		},
 		"containerUri": {
 			"type": "string",
 			"metadata": "URI to storage account containing linked ARM templates"
@@ -54,6 +58,9 @@
 					},
 					"LS_Blob_StorageAccountEUS2_connectionString": {
 						"value": "[parameters('LS_Blob_StorageAccountEUS2_connectionString')]"
+					},
+					"CopyFile_Event_properties_typeProperties_scope": {
+						"value": "[parameters('CopyFile_Event_properties_typeProperties_scope')]"
 					}
 				}
 			},
