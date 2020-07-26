@@ -86,7 +86,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "select * from orders where InsertDateTime >'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and InsertDateTime <= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
+							"value": "SELECT * FROM @{pipeline().parameters.TableName} where @{pipeline().parameters.WaterMarkColumn}>'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and @{pipeline().parameters.WaterMarkColumn}<= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00"
@@ -112,8 +112,14 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "DS_SQL_TargetDB_Orders",
-						"type": "DatasetReference"
+						"referenceName": "DS_SQL_TargetDB_Parameterized",
+						"type": "DatasetReference",
+						"parameters": {
+							"TableName": {
+								"value": "@pipeline().parameters.TableName",
+								"type": "Expression"
+							}
+						}
 					}
 				]
 			},
