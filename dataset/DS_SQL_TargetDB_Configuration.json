@@ -1,0 +1,25 @@
+{
+	"name": "DS_SQL_TargetDB_Configuration",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_Azure_SQL_Target",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "TableName",
+				"type": "varchar"
+			},
+			{
+				"name": "WaterMarkColumn",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "ConfigurationTable"
+		}
+	}
+}

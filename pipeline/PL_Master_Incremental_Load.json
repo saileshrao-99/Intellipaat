@@ -1,0 +1,76 @@
+{
+	"name": "PL_Master_Incremental_Load",
+	"properties": {
+		"activities": [
+			{
+				"name": "LKP Configuration Table",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "DS_SQL_TargetDB_Configuration",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "For_IterateCollection",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "LKP Configuration Table",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('LKP Configuration Table').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Execute PL_Incremental_Load_Dynamic",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_IncrementalLoad_Dynamic",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"TableName": {
+										"value": "@{item().TableName}",
+										"type": "Expression"
+									},
+									"WaterMarkColumn": {
+										"value": "@{item().WaterMarkColumn}",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"annotations": []
+	}
+}
