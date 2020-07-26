@@ -1,0 +1,24 @@
+{
+	"name": "CopyFile_Event",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_CopyFile_Parameterized",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/source/blobs/",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/9d77daff-9706-4ab3-b8e3-d5545481c2a2/resourceGroups/Intellipaat-RG/providers/Microsoft.Storage/storageAccounts/storageaccounteu2",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}
