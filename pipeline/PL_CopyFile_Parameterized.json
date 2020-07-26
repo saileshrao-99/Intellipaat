@@ -185,7 +185,10 @@
 						"referenceName": "SourceCSV_Parameterized",
 						"type": "DatasetReference",
 						"parameters": {
-							"DatasetFileName": "AllCountries.csv"
+							"DatasetFileName": {
+								"value": "@pipeline().parameters.FileName",
+								"type": "Expression"
+							}
 						}
 					}
 				],
