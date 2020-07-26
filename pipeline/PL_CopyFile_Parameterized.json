@@ -201,6 +201,11 @@
 			}
 		],
 		"concurrency": 1,
+		"parameters": {
+			"FileName": {
+				"type": "string"
+			}
+		},
 		"annotations": []
 	},
 	"type": "Microsoft.DataFactory/factories/pipelines"
