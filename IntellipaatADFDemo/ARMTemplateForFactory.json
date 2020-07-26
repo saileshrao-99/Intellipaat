@@ -900,6 +900,199 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/PL_IncrementalLoad_Dynamic')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "New incremental Pipeline ",
+				"activities": [
+					{
+						"name": "lkp_oldwatermarkvalue",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT TableName,WatermarkValue as oldwatermarkvalue from dbo.watermarktable where [TableName] = '@{pipeline().parameters.TableName}'",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "Azure_SQL_Target_DB_Watermark",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "lkp_newwatermarkvalue",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT max(@{pipeline().parameters.WaterMarkColumn}) as newwatermarkvalue FROM @{pipeline().parameters.TableName}",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_SourceDB_Orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "Copy Data",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "lkp_oldwatermarkvalue",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "lkp_newwatermarkvalue",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "SELECT * FROM @{pipeline().parameters.TableName} where @{pipeline().parameters.WaterMarkColumn}>'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and @{pipeline().parameters.WaterMarkColumn}<= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00"
+							},
+							"sink": {
+								"type": "AzureSqlSink"
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_SQL_SourceDB_Orders",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_SQL_TargetDB_Parameterized",
+								"type": "DatasetReference",
+								"parameters": {
+									"TableName": {
+										"value": "@pipeline().parameters.TableName",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "SP_WatermarkTable",
+						"type": "SqlServerStoredProcedure",
+						"dependsOn": [
+							{
+								"activity": "Copy Data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"storedProcedureName": "[[dbo].[spSetWatermark]",
+							"storedProcedureParameters": {
+								"NewTime": {
+									"value": {
+										"value": "@activity('lkp_newwatermarkvalue').output.firstrow.newwatermarkvalue",
+										"type": "Expression"
+									},
+									"type": "DateTime"
+								},
+								"TableName": {
+									"value": {
+										"value": "@activity('lkp_oldwatermarkvalue').output.FirstRow.tablename",
+										"type": "Expression"
+									},
+									"type": "String"
+								}
+							}
+						},
+						"linkedServiceName": {
+							"referenceName": "LS_Azure_SQL_Target",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"parameters": {
+					"TableName": {
+						"type": "string",
+						"defaultValue": "orders"
+					},
+					"WaterMarkColumn": {
+						"type": "string",
+						"defaultValue": "InsertDateTime"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Azure_SQL_Target_DB_Watermark')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_SourceDB_Orders')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Parameterized')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Azure_SQL_Target_DB_Watermark')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -978,6 +1171,35 @@
 				"typeProperties": {
 					"schema": "dbo",
 					"table": "orders"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Parameterized')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Azure_SQL_Target",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"TableName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": {
+						"value": "@dataset().TableName",
+						"type": "Expression"
+					}
 				}
 			},
 			"dependsOn": [
@@ -1232,7 +1454,7 @@
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
-				"runtimeState": "Stopped",
+				"runtimeState": "Started",
 				"pipelines": [
 					{
 						"pipelineReference": {
@@ -1257,14 +1479,13 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/PL_IncrementalLoad_Dynamic')]",
+			"name": "[concat(parameters('factoryName'), '/PL_Master_Incremental_Load')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"description": "New incremental Pipeline ",
 				"activities": [
 					{
-						"name": "lkp_oldwatermarkvalue",
+						"name": "LKP Configuration Table",
 						"type": "Lookup",
 						"dependsOn": [],
 						"policy": {
@@ -1278,177 +1499,70 @@
 						"typeProperties": {
 							"source": {
 								"type": "AzureSqlSource",
-								"sqlReaderQuery": {
-									"value": "SELECT TableName,WatermarkValue as oldwatermarkvalue from dbo.watermarktable where [TableName] = '@{pipeline().parameters.TableName}'",
-									"type": "Expression"
-								},
 								"queryTimeout": "02:00:00"
 							},
 							"dataset": {
-								"referenceName": "Azure_SQL_Target_DB_Watermark",
+								"referenceName": "DS_SQL_TargetDB_Configuration",
 								"type": "DatasetReference",
 								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "lkp_newwatermarkvalue",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": {
-									"value": "SELECT max(@{pipeline().parameters.WaterMarkColumn}) as newwatermarkvalue FROM @{pipeline().parameters.TableName}",
-									"type": "Expression"
-								},
-								"queryTimeout": "02:00:00"
 							},
-							"dataset": {
-								"referenceName": "DS_SQL_SourceDB_Orders",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
+							"firstRowOnly": false
 						}
 					},
 					{
-						"name": "Copy Data",
-						"type": "Copy",
+						"name": "For_IterateCollection",
+						"type": "ForEach",
 						"dependsOn": [
 							{
-								"activity": "lkp_oldwatermarkvalue",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "lkp_newwatermarkvalue",
+								"activity": "LKP Configuration Table",
 								"dependencyConditions": [
 									"Succeeded"
 								]
 							}
 						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
 						"userProperties": [],
 						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": {
-									"value": "SELECT * FROM @{pipeline().parameters.TableName} where @{pipeline().parameters.WaterMarkColumn}>'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and @{pipeline().parameters.WaterMarkColumn}<= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
-									"type": "Expression"
-								},
-								"queryTimeout": "02:00:00"
+							"items": {
+								"value": "@activity('LKP Configuration Table').output.value",
+								"type": "Expression"
 							},
-							"sink": {
-								"type": "AzureSqlSink"
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "DS_SQL_SourceDB_Orders",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "DS_SQL_TargetDB_Parameterized",
-								"type": "DatasetReference",
-								"parameters": {
-									"TableName": {
-										"value": "@pipeline().parameters.TableName",
-										"type": "Expression"
+							"activities": [
+								{
+									"name": "Execute PL_Incremental_Load_Dynamic",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_IncrementalLoad_Dynamic",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"TableName": {
+												"value": "@{item().TableName}",
+												"type": "Expression"
+											},
+											"WaterMarkColumn": {
+												"value": "@{item().WaterMarkColumn}",
+												"type": "Expression"
+											}
+										}
 									}
 								}
-							}
-						]
-					},
-					{
-						"name": "SP_WatermarkTable",
-						"type": "SqlServerStoredProcedure",
-						"dependsOn": [
-							{
-								"activity": "Copy Data",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"storedProcedureName": "[[dbo].[spSetWatermark]",
-							"storedProcedureParameters": {
-								"NewTime": {
-									"value": {
-										"value": "@activity('lkp_newwatermarkvalue').output.firstrow.newwatermarkvalue",
-										"type": "Expression"
-									},
-									"type": "DateTime"
-								},
-								"TableName": {
-									"value": {
-										"value": "@activity('lkp_oldwatermarkvalue').output.FirstRow.tablename",
-										"type": "Expression"
-									},
-									"type": "String"
-								}
-							}
-						},
-						"linkedServiceName": {
-							"referenceName": "LS_Azure_SQL_Target",
-							"type": "LinkedServiceReference"
+							]
 						}
 					}
 				],
-				"parameters": {
-					"TableName": {
-						"type": "string"
-					},
-					"WaterMarkColumn": {
-						"type": "string"
-					}
-				},
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/Azure_SQL_Target_DB_Watermark')]",
-				"[concat(variables('factoryId'), '/datasets/DS_SQL_SourceDB_Orders')]",
-				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Parameterized')]",
-				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Configuration')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_IncrementalLoad_Dynamic')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Parameterized')]",
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Configuration')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -1456,20 +1570,21 @@
 					"referenceName": "LS_Azure_SQL_Target",
 					"type": "LinkedServiceReference"
 				},
-				"parameters": {
-					"TableName": {
-						"type": "string"
-					}
-				},
 				"annotations": [],
 				"type": "AzureSqlTable",
-				"schema": [],
+				"schema": [
+					{
+						"name": "TableName",
+						"type": "varchar"
+					},
+					{
+						"name": "WaterMarkColumn",
+						"type": "varchar"
+					}
+				],
 				"typeProperties": {
 					"schema": "dbo",
-					"table": {
-						"value": "@dataset().TableName",
-						"type": "Expression"
-					}
+					"table": "ConfigurationTable"
 				}
 			},
 			"dependsOn": [

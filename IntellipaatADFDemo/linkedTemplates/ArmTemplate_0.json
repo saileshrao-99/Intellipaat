@@ -153,6 +153,35 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Parameterized')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Azure_SQL_Target",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"TableName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": {
+						"value": "@dataset().TableName",
+						"type": "Expression"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/SourceCSV')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -356,7 +385,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Parameterized')]",
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Configuration')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -364,20 +393,21 @@
 					"referenceName": "LS_Azure_SQL_Target",
 					"type": "LinkedServiceReference"
 				},
-				"parameters": {
-					"TableName": {
-						"type": "string"
-					}
-				},
 				"annotations": [],
 				"type": "AzureSqlTable",
-				"schema": [],
+				"schema": [
+					{
+						"name": "TableName",
+						"type": "varchar"
+					},
+					{
+						"name": "WaterMarkColumn",
+						"type": "varchar"
+					}
+				],
 				"typeProperties": {
 					"schema": "dbo",
-					"table": {
-						"value": "@dataset().TableName",
-						"type": "Expression"
-					}
+					"table": "ConfigurationTable"
 				}
 			},
 			"dependsOn": [
@@ -1431,10 +1461,12 @@
 				],
 				"parameters": {
 					"TableName": {
-						"type": "string"
+						"type": "string",
+						"defaultValue": "orders"
 					},
 					"WaterMarkColumn": {
-						"type": "string"
+						"type": "string",
+						"defaultValue": "InsertDateTime"
 					}
 				},
 				"annotations": []
@@ -1452,7 +1484,7 @@
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
-				"runtimeState": "Stopped",
+				"runtimeState": "Started",
 				"pipelines": [
 					{
 						"pipelineReference": {
@@ -1474,6 +1506,89 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/pipelines/PL_CopyFile_Parameterized')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_Master_Incremental_Load')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LKP Configuration Table",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_TargetDB_Configuration",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "For_IterateCollection",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "LKP Configuration Table",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('LKP Configuration Table').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Execute PL_Incremental_Load_Dynamic",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_IncrementalLoad_Dynamic",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"TableName": {
+												"value": "@{item().TableName}",
+												"type": "Expression"
+											},
+											"WaterMarkColumn": {
+												"value": "@{item().WaterMarkColumn}",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Configuration')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_IncrementalLoad_Dynamic')]"
 			]
 		}
 	]
