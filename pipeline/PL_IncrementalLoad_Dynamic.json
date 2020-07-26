@@ -18,7 +18,10 @@
 				"typeProperties": {
 					"source": {
 						"type": "AzureSqlSource",
-						"sqlReaderQuery": " select TableName,WatermarkValue as oldwatermarkvalue from dbo.watermarktable where [TableName] = 'orders'",
+						"sqlReaderQuery": {
+							"value": "SELECT TableName,WatermarkValue as oldwatermarkvalue from dbo.watermarktable where [TableName] = '@{pipeline().parameters.TableName}'",
+							"type": "Expression"
+						},
 						"queryTimeout": "02:00:00"
 					},
 					"dataset": {
@@ -42,7 +45,10 @@
 				"typeProperties": {
 					"source": {
 						"type": "AzureSqlSource",
-						"sqlReaderQuery": " select max(InsertDateTime) as newwatermarkvalue from orders",
+						"sqlReaderQuery": {
+							"value": "SELECT max(@{pipeline().parameters.WaterMarkColumn}) as newwatermarkvalue FROM @{pipeline().parameters.TableName}",
+							"type": "Expression"
+						},
 						"queryTimeout": "02:00:00"
 					},
 					"dataset": {
@@ -155,6 +161,14 @@
 				}
 			}
 		],
+		"parameters": {
+			"TableName": {
+				"type": "string"
+			},
+			"WaterMarkColumn": {
+				"type": "string"
+			}
+		},
 		"annotations": []
 	},
 	"type": "Microsoft.DataFactory/factories/pipelines"
