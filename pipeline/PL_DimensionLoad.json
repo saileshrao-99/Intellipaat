@@ -1,5 +1,5 @@
 {
-	"name": "PL_StagingLoad",
+	"name": "PL_DimensionLoad",
 	"properties": {
 		"activities": [
 			{
@@ -16,18 +16,15 @@
 				"userProperties": [],
 				"typeProperties": {
 					"source": {
-						"type": "DelimitedTextSource",
-						"storeSettings": {
-							"type": "AzureBlobStorageReadSettings",
-							"recursive": true
-						},
-						"formatSettings": {
-							"type": "DelimitedTextReadSettings"
-						}
+						"type": "AzureSqlSource",
+						"queryTimeout": "02:00:00"
 					},
 					"sink": {
 						"type": "AzureSqlSink",
 						"preCopyScript": "TRUNCATE TABLE staging.employee",
+						"sqlWriterStoredProcedureName": "[dbo].[usp_LoadPurchaseOrder]",
+						"sqlWriterTableType": "StagingPurchaseOrder",
+						"storedProcedureTableTypeParameterName": "source",
 						"disableMetricsCollection": false
 					},
 					"enableStaging": false,
@@ -37,47 +34,41 @@
 							{
 								"source": {
 									"name": "EmployeeCode",
-									"type": "String",
-									"physicalType": "String"
-								},
-								"sink": {
-									"name": "EmployeeCode",
 									"type": "Int32",
 									"physicalType": "int"
+								},
+								"sink": {
+									"name": "EmployeeCode"
 								}
 							},
 							{
 								"source": {
-									"name": " EmployeeName",
-									"type": "String",
-									"physicalType": "String"
-								},
-								"sink": {
 									"name": "EmployeeName",
 									"type": "String",
 									"physicalType": "varchar"
+								},
+								"sink": {
+									"name": "EmployeeName"
 								}
 							},
 							{
 								"source": {
-									"name": " Address",
-									"type": "String"
-								},
-								"sink": {
 									"name": "Address",
 									"type": "String",
 									"physicalType": "varchar"
+								},
+								"sink": {
+									"name": "Address"
 								}
 							},
 							{
 								"source": {
-									"name": " PhoneNumber",
-									"type": "String"
-								},
-								"sink": {
 									"name": "PhoneNumber",
 									"type": "String",
 									"physicalType": "varchar"
+								},
+								"sink": {
+									"name": "PhoneNumber"
 								}
 							}
 						],
@@ -90,13 +81,13 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "DS_OLTP_Blob_Employee",
+						"referenceName": "DS_OLTP_Staging_SourceDB_StagingEmployee",
 						"type": "DatasetReference"
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "DS_OLTP_Staging_SourceDB_StagingEmployee",
+						"referenceName": "DS_SQL_OLTP_TargetEmployee_Employee",
 						"type": "DatasetReference"
 					}
 				]
