@@ -21,7 +21,6 @@
 					},
 					"sink": {
 						"type": "AzureSqlSink",
-						"preCopyScript": "TRUNCATE TABLE staging.employee",
 						"sqlWriterStoredProcedureName": "[dbo].[usp_LoadPurchaseOrder]",
 						"sqlWriterTableType": "StagingPurchaseOrder",
 						"storedProcedureTableTypeParameterName": "source",
