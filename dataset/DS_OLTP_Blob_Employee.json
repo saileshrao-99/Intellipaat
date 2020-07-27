@@ -1,0 +1,75 @@
+{
+	"name": "DS_OLTP_Blob_Employee",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_Blob_StorageAccountEUS2",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "DS_OLTP"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "employee.txt",
+				"container": "source"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "Country",
+				"type": "String"
+			},
+			{
+				"name": "LandArea",
+				"type": "String"
+			},
+			{
+				"name": "Population",
+				"type": "String"
+			},
+			{
+				"name": "GDP",
+				"type": "String"
+			},
+			{
+				"name": "Rural",
+				"type": "String"
+			},
+			{
+				"name": "Internet",
+				"type": "String"
+			},
+			{
+				"name": "BirthRate",
+				"type": "String"
+			},
+			{
+				"name": "DeathRate",
+				"type": "String"
+			},
+			{
+				"name": "ElderlyPop",
+				"type": "String"
+			},
+			{
+				"name": "LifeExpectancy",
+				"type": "String"
+			},
+			{
+				"name": "FemaleLabor",
+				"type": "String"
+			},
+			{
+				"name": "Unemployment",
+				"type": "String"
+			}
+		]
+	}
+}
