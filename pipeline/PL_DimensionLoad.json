@@ -21,8 +21,8 @@
 					},
 					"sink": {
 						"type": "AzureSqlSink",
-						"sqlWriterStoredProcedureName": "[dbo].[usp_LoadPurchaseOrder]",
-						"sqlWriterTableType": "StagingPurchaseOrder",
+						"sqlWriterStoredProcedureName": "[dbo].[usp_LoadLoadEmployee]",
+						"sqlWriterTableType": "StagingEmployee",
 						"storedProcedureTableTypeParameterName": "source",
 						"disableMetricsCollection": false
 					},
