@@ -18,10 +18,6 @@
 		"LS_Blob_StorageAccountEUS2_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_Blob_StorageAccountEUS2'"
-		},
-		"CopyFile_Event_properties_typeProperties_scope": {
-			"type": "string",
-			"defaultValue": "/subscriptions/9d77daff-9706-4ab3-b8e3-d5545481c2a2/resourceGroups/Intellipaat-RG/providers/Microsoft.Storage/storageAccounts/storageaccounteu2"
 		}
 	},
 	"variables": {
@@ -1091,6 +1087,89 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/PL_Master_Incremental_Load')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "LKP Configuration Table",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00"
+							},
+							"dataset": {
+								"referenceName": "DS_SQL_TargetDB_Configuration",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "For_IterateCollection",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "LKP Configuration Table",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('LKP Configuration Table').output.value",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Execute PL_Incremental_Load_Dynamic",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_IncrementalLoad_Dynamic",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"TableName": {
+												"value": "@{item().TableName}",
+												"type": "Expression"
+											},
+											"WaterMarkColumn": {
+												"value": "@{item().WaterMarkColumn}",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Configuration')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_IncrementalLoad_Dynamic')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Azure_SQL_Target_DB_Watermark')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -1141,6 +1220,36 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_Source')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Configuration')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Azure_SQL_Target",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "TableName",
+						"type": "varchar"
+					},
+					{
+						"name": "WaterMarkColumn",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "ConfigurationTable"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
 			]
 		},
 		{
@@ -1447,44 +1556,251 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/CopyFile_Event')]",
-			"type": "Microsoft.DataFactory/factories/triggers",
+			"name": "[concat(parameters('factoryName'), '/DS_OLTP_Blob_Employee')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Blob_StorageAccountEUS2",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "DS_OLTP"
+				},
 				"annotations": [],
-				"runtimeState": "Started",
-				"pipelines": [
-					{
-						"pipelineReference": {
-							"referenceName": "PL_CopyFile_Parameterized",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					}
-				],
-				"type": "BlobEventsTrigger",
+				"type": "DelimitedText",
 				"typeProperties": {
-					"blobPathBeginsWith": "/source/blobs/",
-					"ignoreEmptyBlobs": true,
-					"scope": "[parameters('CopyFile_Event_properties_typeProperties_scope')]",
-					"events": [
-						"Microsoft.Storage.BlobCreated"
-					]
-				}
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "employee.txt",
+						"container": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Country",
+						"type": "String"
+					},
+					{
+						"name": "LandArea",
+						"type": "String"
+					},
+					{
+						"name": "Population",
+						"type": "String"
+					},
+					{
+						"name": "GDP",
+						"type": "String"
+					},
+					{
+						"name": "Rural",
+						"type": "String"
+					},
+					{
+						"name": "Internet",
+						"type": "String"
+					},
+					{
+						"name": "BirthRate",
+						"type": "String"
+					},
+					{
+						"name": "DeathRate",
+						"type": "String"
+					},
+					{
+						"name": "ElderlyPop",
+						"type": "String"
+					},
+					{
+						"name": "LifeExpectancy",
+						"type": "String"
+					},
+					{
+						"name": "FemaleLabor",
+						"type": "String"
+					},
+					{
+						"name": "Unemployment",
+						"type": "String"
+					}
+				]
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/PL_CopyFile_Parameterized')]"
+				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/PL_Master_Incremental_Load')]",
+			"name": "[concat(parameters('factoryName'), '/DS_OLTP_Staging_SourceDB_StagingEmployee')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_AzureSQL_Source",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "DS_OLTP"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "EmployeeCode",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "EmployeeName",
+						"type": "varchar"
+					},
+					{
+						"name": "Address",
+						"type": "varchar"
+					},
+					{
+						"name": "PhoneNumber",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "Staging",
+					"table": "Employee"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_Source')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_StagingLoad')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"activities": [
 					{
-						"name": "LKP Configuration Table",
-						"type": "Lookup",
+						"name": "Copy Employee",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": "TRUNCATE TABLE staging.employee",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "EmployeeCode",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "EmployeeCode",
+											"type": "Int32",
+											"physicalType": "int"
+										}
+									},
+									{
+										"source": {
+											"name": " EmployeeName",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "EmployeeName",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": " Address",
+											"type": "String"
+										},
+										"sink": {
+											"name": "Address",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": " PhoneNumber",
+											"type": "String"
+										},
+										"sink": {
+											"name": "PhoneNumber",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_OLTP_Blob_Employee",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_OLTP_Staging_SourceDB_StagingEmployee",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_OLTP_Blob_Employee')]",
+				"[concat(variables('factoryId'), '/datasets/DS_OLTP_Staging_SourceDB_StagingEmployee')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_DimensionLoad')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy Employee",
+						"type": "Copy",
 						"dependsOn": [],
 						"policy": {
 							"timeout": "7.00:00:00",
@@ -1499,68 +1815,90 @@
 								"type": "AzureSqlSource",
 								"queryTimeout": "02:00:00"
 							},
-							"dataset": {
-								"referenceName": "DS_SQL_TargetDB_Configuration",
-								"type": "DatasetReference",
-								"parameters": {}
+							"sink": {
+								"type": "AzureSqlSink",
+								"sqlWriterStoredProcedureName": "[[dbo].[usp_LoadLoadEmployee]",
+								"sqlWriterTableType": "StagingEmployee",
+								"storedProcedureTableTypeParameterName": "source",
+								"disableMetricsCollection": false
 							},
-							"firstRowOnly": false
-						}
-					},
-					{
-						"name": "For_IterateCollection",
-						"type": "ForEach",
-						"dependsOn": [
-							{
-								"activity": "LKP Configuration Table",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"items": {
-								"value": "@activity('LKP Configuration Table').output.value",
-								"type": "Expression"
-							},
-							"activities": [
-								{
-									"name": "Execute PL_Incremental_Load_Dynamic",
-									"type": "ExecutePipeline",
-									"dependsOn": [],
-									"userProperties": [],
-									"typeProperties": {
-										"pipeline": {
-											"referenceName": "PL_IncrementalLoad_Dynamic",
-											"type": "PipelineReference"
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "EmployeeCode",
+											"type": "Int32",
+											"physicalType": "int"
 										},
-										"waitOnCompletion": true,
-										"parameters": {
-											"TableName": {
-												"value": "@{item().TableName}",
-												"type": "Expression"
-											},
-											"WaterMarkColumn": {
-												"value": "@{item().WaterMarkColumn}",
-												"type": "Expression"
-											}
+										"sink": {
+											"name": "EmployeeCode"
+										}
+									},
+									{
+										"source": {
+											"name": "EmployeeName",
+											"type": "String",
+											"physicalType": "varchar"
+										},
+										"sink": {
+											"name": "EmployeeName"
+										}
+									},
+									{
+										"source": {
+											"name": "Address",
+											"type": "String",
+											"physicalType": "varchar"
+										},
+										"sink": {
+											"name": "Address"
+										}
+									},
+									{
+										"source": {
+											"name": "PhoneNumber",
+											"type": "String",
+											"physicalType": "varchar"
+										},
+										"sink": {
+											"name": "PhoneNumber"
 										}
 									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
 								}
-							]
-						}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_OLTP_Staging_SourceDB_StagingEmployee",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_SQL_OLTP_TargetEmployee_Employee",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
 					}
 				],
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Configuration')]",
-				"[concat(variables('factoryId'), '/pipelines/PL_IncrementalLoad_Dynamic')]"
+				"[concat(variables('factoryId'), '/datasets/DS_OLTP_Staging_SourceDB_StagingEmployee')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_OLTP_TargetEmployee_Employee')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_Configuration')]",
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_OLTP_TargetEmployee_Employee')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -1572,17 +1910,31 @@
 				"type": "AzureSqlTable",
 				"schema": [
 					{
-						"name": "TableName",
+						"name": "EmployeeKey",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "EmployeeCode",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "EmployeeName",
 						"type": "varchar"
 					},
 					{
-						"name": "WaterMarkColumn",
+						"name": "Address",
+						"type": "varchar"
+					},
+					{
+						"name": "PhoneNumber",
 						"type": "varchar"
 					}
 				],
 				"typeProperties": {
 					"schema": "dbo",
-					"table": "ConfigurationTable"
+					"table": "Employee"
 				}
 			},
 			"dependsOn": [
