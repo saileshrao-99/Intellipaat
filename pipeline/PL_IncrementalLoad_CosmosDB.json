@@ -27,9 +27,68 @@
 					"sink": {
 						"type": "CosmosDbMongoDbApiSink",
 						"writeBatchTimeout": "00:30:00",
-						"writeBehavior": "insert"
+						"writeBehavior": "upsert"
 					},
-					"enableStaging": false
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "OrderID",
+									"type": "Int32"
+								},
+								"sink": {
+									"path": "$['$[OrderID]']"
+								}
+							},
+							{
+								"source": {
+									"name": "ProductID",
+									"type": "String"
+								},
+								"sink": {
+									"path": "$['$[ProductID]']"
+								}
+							},
+							{
+								"source": {
+									"name": "CustomerID",
+									"type": "String"
+								},
+								"sink": {
+									"path": "$['$[CustomerID]']"
+								}
+							},
+							{
+								"source": {
+									"name": "UnitPrice",
+									"type": "Decimal"
+								},
+								"sink": {
+									"path": "$['$[UnitPrice]']"
+								}
+							},
+							{
+								"source": {
+									"name": "Quantity",
+									"type": "Int32"
+								},
+								"sink": {
+									"path": "$['$[Quantity]']"
+								}
+							},
+							{
+								"source": {
+									"name": "InsertDateTime",
+									"type": "DateTime"
+								},
+								"sink": {
+									"path": "$['$[InsertDateTime']"
+								}
+							}
+						]
+					}
 				},
 				"inputs": [
 					{
