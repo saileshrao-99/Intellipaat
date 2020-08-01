@@ -84,7 +84,7 @@
 									"type": "DateTime"
 								},
 								"sink": {
-									"path": "$['$[InsertDateTime']"
+									"path": "$['$[InsertDateTime]']"
 								}
 							}
 						]
