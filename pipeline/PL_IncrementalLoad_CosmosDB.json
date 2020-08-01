@@ -39,7 +39,7 @@
 									"type": "Int32"
 								},
 								"sink": {
-									"path": "$['_id']"
+									"path": "$['$[OrderID]']"
 								}
 							},
 							{
@@ -57,7 +57,7 @@
 									"type": "String"
 								},
 								"sink": {
-									"path": "$['$[CustomerID]']"
+									"path": "$['$[CustomerID']"
 								}
 							},
 							{
