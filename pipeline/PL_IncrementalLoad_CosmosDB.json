@@ -39,7 +39,16 @@
 									"type": "Int32"
 								},
 								"sink": {
-									"path": "$['_id']"
+									"path": "$['_id']['_id']"
+								}
+							},
+							{
+								"source": {
+									"name": "OrderID",
+									"type": "Int32"
+								},
+								"sink": {
+									"path": "$['$[OrderID]']"
 								}
 							},
 							{
