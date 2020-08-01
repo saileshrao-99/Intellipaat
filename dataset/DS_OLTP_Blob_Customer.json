@@ -1,0 +1,20 @@
+{
+	"name": "DS_OLTP_Blob_Customer",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_Blob_StorageAccountEUS2",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}

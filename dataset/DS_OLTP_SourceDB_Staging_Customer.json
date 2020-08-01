@@ -1,0 +1,34 @@
+{
+	"name": "DS_OLTP_SourceDB_Staging_Customer",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_AzureSQL_Source",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "CustomerCode",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "CustomerName",
+				"type": "varchar"
+			},
+			{
+				"name": "Address",
+				"type": "varchar"
+			},
+			{
+				"name": "PhoneNumber",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "Staging",
+			"table": "Customer"
+		}
+	}
+}

@@ -90,6 +90,95 @@
 						"type": "DatasetReference"
 					}
 				]
+			},
+			{
+				"name": "Copy Customer",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"queryTimeout": "02:00:00"
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"sqlWriterStoredProcedureName": "[dbo].[usp_LoadLoadEmployee]",
+						"sqlWriterTableType": "StagingEmployee",
+						"storedProcedureTableTypeParameterName": "source",
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "EmployeeCode",
+									"type": "Int32",
+									"physicalType": "int"
+								},
+								"sink": {
+									"name": "EmployeeCode"
+								}
+							},
+							{
+								"source": {
+									"name": "EmployeeName",
+									"type": "String",
+									"physicalType": "varchar"
+								},
+								"sink": {
+									"name": "EmployeeName"
+								}
+							},
+							{
+								"source": {
+									"name": "Address",
+									"type": "String",
+									"physicalType": "varchar"
+								},
+								"sink": {
+									"name": "Address"
+								}
+							},
+							{
+								"source": {
+									"name": "PhoneNumber",
+									"type": "String",
+									"physicalType": "varchar"
+								},
+								"sink": {
+									"name": "PhoneNumber"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_OLTP_SourceDB_Staging_Customer",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_SQL_OLTP_TargetEmployee_Employee",
+						"type": "DatasetReference"
+					}
+				]
 			}
 		],
 		"annotations": []
