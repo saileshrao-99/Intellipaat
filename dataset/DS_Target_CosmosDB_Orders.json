@@ -1,0 +1,12 @@
+{
+	"name": "DS_Target_CosmosDB_Orders",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_CosmosDB",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "CosmosDbMongoDbApiCollection",
+		"schema": []
+	}
+}
