@@ -5,14 +5,23 @@
 		"factoryName": {
 			"value": "IntellipaatADFDemo"
 		},
-		"LS_AzureSQL_Source_connectionString": {
-			"value": ""
-		},
 		"LS_Azure_SQL_Target_connectionString": {
 			"value": ""
 		},
 		"LS_Blob_StorageAccountEUS2_connectionString": {
 			"value": ""
+		},
+		"LS_CosmosDB_connectionString": {
+			"value": ""
+		},
+		"AKV_Auth_properties_typeProperties_baseUrl": {
+			"value": "https://KeyVaultIntellipaat.vault.azure.net/"
+		},
+		"LS_AzureSQL_Source_properties_typeProperties_connectionString_secretName": {
+			"value": "adfauth"
+		},
+		"LS_CosmosDB_properties_typeProperties_database": {
+			"value": "orderdb"
 		},
 		"containerUri": {
 			"value": ""

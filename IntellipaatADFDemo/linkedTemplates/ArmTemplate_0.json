@@ -7,10 +7,6 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "IntellipaatADFDemo"
 		},
-		"LS_AzureSQL_Source_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'LS_AzureSQL_Source'"
-		},
 		"LS_Azure_SQL_Target_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_Azure_SQL_Target'"
@@ -18,6 +14,18 @@
 		"LS_Blob_StorageAccountEUS2_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_Blob_StorageAccountEUS2'"
+		},
+		"LS_CosmosDB_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_CosmosDB'"
+		},
+		"AKV_Auth_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://KeyVaultIntellipaat.vault.azure.net/"
+		},
+		"LS_CosmosDB_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "orderdb"
 		}
 	},
 	"variables": {
@@ -25,14 +33,14 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/LS_AzureSQL_Source')]",
+			"name": "[concat(parameters('factoryName'), '/AKV_Auth')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"annotations": [],
-				"type": "AzureSqlDatabase",
+				"type": "AzureKeyVault",
 				"typeProperties": {
-					"connectionString": "[parameters('LS_AzureSQL_Source_connectionString')]"
+					"baseUrl": "[parameters('AKV_Auth_properties_typeProperties_baseUrl')]"
 				}
 			},
 			"dependsOn": []
@@ -59,6 +67,20 @@
 				"type": "AzureBlobStorage",
 				"typeProperties": {
 					"connectionString": "[parameters('LS_Blob_StorageAccountEUS2_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_CosmosDB')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "CosmosDbMongoDbApi",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_CosmosDB_connectionString')]",
+					"database": "[parameters('LS_CosmosDB_properties_typeProperties_database')]"
 				}
 			},
 			"dependsOn": []
@@ -96,24 +118,318 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_SQL_SourceDB_Orders')]",
+			"name": "[concat(parameters('factoryName'), '/DS_DF_Blob_Customer')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
 				"linkedServiceName": {
-					"referenceName": "LS_AzureSQL_Source",
+					"referenceName": "LS_Blob_StorageAccountEUS2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "customer.txt",
+						"container": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "PurchaseOrderID",
+						"type": "String"
+					},
+					{
+						"name": " CustomerCode",
+						"type": "String"
+					},
+					{
+						"name": "ProductCode",
+						"type": "String"
+					},
+					{
+						"name": "EmployeeCode",
+						"type": "String"
+					},
+					{
+						"name": " PuchaseOrderDate",
+						"type": "String"
+					},
+					{
+						"name": " Quantity",
+						"type": "String"
+					},
+					{
+						"name": " UnitPrice",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_DF_Blob_PurchaseOrder')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Blob_StorageAccountEUS2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "purchaseorder.txt",
+						"container": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "PurchaseOrderID",
+						"type": "String"
+					},
+					{
+						"name": " CustomerCode",
+						"type": "String"
+					},
+					{
+						"name": "ProductCode",
+						"type": "String"
+					},
+					{
+						"name": "EmployeeCode",
+						"type": "String"
+					},
+					{
+						"name": " PuchaseOrderDate",
+						"type": "String"
+					},
+					{
+						"name": " Quantity",
+						"type": "String"
+					},
+					{
+						"name": " UnitPrice",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_OLTP_Blob_Customer')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Blob_StorageAccountEUS2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "customer.txt",
+						"container": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_OLTP_Blob_Employee')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Blob_StorageAccountEUS2",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "DS_OLTP"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "employee.txt",
+						"container": "source"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Country",
+						"type": "String"
+					},
+					{
+						"name": "LandArea",
+						"type": "String"
+					},
+					{
+						"name": "Population",
+						"type": "String"
+					},
+					{
+						"name": "GDP",
+						"type": "String"
+					},
+					{
+						"name": "Rural",
+						"type": "String"
+					},
+					{
+						"name": "Internet",
+						"type": "String"
+					},
+					{
+						"name": "BirthRate",
+						"type": "String"
+					},
+					{
+						"name": "DeathRate",
+						"type": "String"
+					},
+					{
+						"name": "ElderlyPop",
+						"type": "String"
+					},
+					{
+						"name": "LifeExpectancy",
+						"type": "String"
+					},
+					{
+						"name": "FemaleLabor",
+						"type": "String"
+					},
+					{
+						"name": "Unemployment",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_Metrics')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Azure_SQL_Target",
 					"type": "LinkedServiceReference"
 				},
 				"annotations": [],
 				"type": "AzureSqlTable",
-				"schema": [],
+				"schema": [
+					{
+						"name": "CustomerCode",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ProductCode",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Quantity",
+						"type": "int",
+						"precision": 10
+					}
+				],
 				"typeProperties": {
 					"schema": "dbo",
-					"table": "orders"
+					"table": "Metric_ProductCustomerCount"
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_Source')]"
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_OLTP_TargetEmployee_Employee')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Azure_SQL_Target",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "EmployeeKey",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "EmployeeCode",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "EmployeeName",
+						"type": "varchar"
+					},
+					{
+						"name": "Address",
+						"type": "varchar"
+					},
+					{
+						"name": "PhoneNumber",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Employee"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
 			]
 		},
 		{
@@ -205,6 +521,70 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_TargetDB_TargetCustomer')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_Azure_SQL_Target",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "CustomerKey",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "CustomerCode",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "CustomerName",
+						"type": "varchar"
+					},
+					{
+						"name": "Address",
+						"type": "varchar"
+					},
+					{
+						"name": "PhoneNumber",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Customer"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Target_CosmosDB_Orders')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_CosmosDB",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "CosmosDbMongoDbApiCollection",
+				"schema": [],
+				"typeProperties": {
+					"collection": "orders"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_CosmosDB')]"
 			]
 		},
 		{
@@ -408,1234 +788,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/DS_OLTP_Blob_Employee')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "LS_Blob_StorageAccountEUS2",
-					"type": "LinkedServiceReference"
-				},
-				"folder": {
-					"name": "DS_OLTP"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobStorageLocation",
-						"fileName": "employee.txt",
-						"container": "source"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
-				},
-				"schema": [
-					{
-						"name": "Country",
-						"type": "String"
-					},
-					{
-						"name": "LandArea",
-						"type": "String"
-					},
-					{
-						"name": "Population",
-						"type": "String"
-					},
-					{
-						"name": "GDP",
-						"type": "String"
-					},
-					{
-						"name": "Rural",
-						"type": "String"
-					},
-					{
-						"name": "Internet",
-						"type": "String"
-					},
-					{
-						"name": "BirthRate",
-						"type": "String"
-					},
-					{
-						"name": "DeathRate",
-						"type": "String"
-					},
-					{
-						"name": "ElderlyPop",
-						"type": "String"
-					},
-					{
-						"name": "LifeExpectancy",
-						"type": "String"
-					},
-					{
-						"name": "FemaleLabor",
-						"type": "String"
-					},
-					{
-						"name": "Unemployment",
-						"type": "String"
-					}
-				]
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_Blob_StorageAccountEUS2')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/DS_OLTP_Staging_SourceDB_StagingEmployee')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "LS_AzureSQL_Source",
-					"type": "LinkedServiceReference"
-				},
-				"folder": {
-					"name": "DS_OLTP"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [
-					{
-						"name": "EmployeeCode",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "EmployeeName",
-						"type": "varchar"
-					},
-					{
-						"name": "Address",
-						"type": "varchar"
-					},
-					{
-						"name": "PhoneNumber",
-						"type": "varchar"
-					}
-				],
-				"typeProperties": {
-					"schema": "Staging",
-					"table": "Employee"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_Source')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/DS_SQL_OLTP_TargetEmployee_Employee')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "LS_Azure_SQL_Target",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [
-					{
-						"name": "EmployeeKey",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "EmployeeCode",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "EmployeeName",
-						"type": "varchar"
-					},
-					{
-						"name": "Address",
-						"type": "varchar"
-					},
-					{
-						"name": "PhoneNumber",
-						"type": "varchar"
-					}
-				],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": "Employee"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/PL_CopyFile')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "CopyCSV",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 1,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "DelimitedTextSource",
-								"storeSettings": {
-									"type": "AzureBlobStorageReadSettings",
-									"recursive": true
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
-							},
-							"sink": {
-								"type": "DelimitedTextSink",
-								"storeSettings": {
-									"type": "AzureBlobStorageWriteSettings"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextWriteSettings",
-									"quoteAllText": true,
-									"fileExtension": ".csv"
-								}
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"mappings": [
-									{
-										"source": {
-											"name": "Country",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Country",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "LandArea",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "LandArea",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "Population",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Population",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "GDP",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "GDP",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "Rural",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Rural",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "Internet",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Internet",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "BirthRate",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "BirthRate",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "DeathRate",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "DeathRate",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "ElderlyPop",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "ElderlyPop",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "LifeExpectancy",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "LifeExpectancy",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "FemaleLabor",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "FemaleLabor",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "Unemployment",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Unemployment",
-											"type": "String"
-										}
-									}
-								],
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "SourceCSV",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "TargetDelimited",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						]
-					}
-				],
-				"concurrency": 1,
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/SourceCSV')]",
-				"[concat(variables('factoryId'), '/datasets/TargetDelimited')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/PL_CopyFile_CheckandLoad')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "CheckFileExist",
-						"type": "GetMetadata",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataset": {
-								"referenceName": "TargetDelimited_CheckFile",
-								"type": "DatasetReference",
-								"parameters": {
-									"DatasetFileName": {
-										"value": "@pipeline().parameters.DatasetFileName",
-										"type": "Expression"
-									}
-								}
-							},
-							"fieldList": [
-								"exists"
-							],
-							"storeSettings": {
-								"type": "AzureBlobStorageReadSettings",
-								"recursive": true
-							},
-							"formatSettings": {
-								"type": "DelimitedTextReadSettings"
-							}
-						}
-					},
-					{
-						"name": "IfCondition",
-						"type": "IfCondition",
-						"dependsOn": [
-							{
-								"activity": "CheckFileExist",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"expression": {
-								"value": "@activity('CheckFileExist').output.exist",
-								"type": "Expression"
-							},
-							"ifFalseActivities": [
-								{
-									"name": "CopyCSV",
-									"type": "Copy",
-									"dependsOn": [],
-									"policy": {
-										"timeout": "7.00:00:00",
-										"retry": 1,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"source": {
-											"type": "DelimitedTextSource",
-											"storeSettings": {
-												"type": "AzureBlobStorageReadSettings",
-												"recursive": true
-											},
-											"formatSettings": {
-												"type": "DelimitedTextReadSettings"
-											}
-										},
-										"sink": {
-											"type": "DelimitedTextSink",
-											"storeSettings": {
-												"type": "AzureBlobStorageWriteSettings"
-											},
-											"formatSettings": {
-												"type": "DelimitedTextWriteSettings",
-												"quoteAllText": true,
-												"fileExtension": ".csv"
-											}
-										},
-										"enableStaging": false,
-										"translator": {
-											"type": "TabularTranslator",
-											"mappings": [
-												{
-													"source": {
-														"name": "Country",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "Country",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "LandArea",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "LandArea",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "Population",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "Population",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "GDP",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "GDP",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "Rural",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "Rural",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "Internet",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "Internet",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "BirthRate",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "BirthRate",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "DeathRate",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "DeathRate",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "ElderlyPop",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "ElderlyPop",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "LifeExpectancy",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "LifeExpectancy",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "FemaleLabor",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "FemaleLabor",
-														"type": "String"
-													}
-												},
-												{
-													"source": {
-														"name": "Unemployment",
-														"type": "String",
-														"physicalType": "String"
-													},
-													"sink": {
-														"name": "Unemployment",
-														"type": "String"
-													}
-												}
-											],
-											"typeConversion": true,
-											"typeConversionSettings": {
-												"allowDataTruncation": true,
-												"treatBooleanAsNumber": false
-											}
-										}
-									},
-									"inputs": [
-										{
-											"referenceName": "SourceCSV_Parameterized",
-											"type": "DatasetReference",
-											"parameters": {
-												"DatasetFileName": "AllCountries.csv"
-											}
-										}
-									],
-									"outputs": [
-										{
-											"referenceName": "TargetDelimited",
-											"type": "DatasetReference",
-											"parameters": {}
-										}
-									]
-								}
-							]
-						}
-					}
-				],
-				"concurrency": 1,
-				"parameters": {
-					"DatasetFileName": {
-						"type": "string",
-						"defaultValue": "AllCountries.csv"
-					}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/TargetDelimited_CheckFile')]",
-				"[concat(variables('factoryId'), '/datasets/SourceCSV_Parameterized')]",
-				"[concat(variables('factoryId'), '/datasets/TargetDelimited')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/PL_CopyFile_Parameterized')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "CopyCSV",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 1,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "DelimitedTextSource",
-								"storeSettings": {
-									"type": "AzureBlobStorageReadSettings",
-									"recursive": true
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
-							},
-							"sink": {
-								"type": "DelimitedTextSink",
-								"storeSettings": {
-									"type": "AzureBlobStorageWriteSettings"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextWriteSettings",
-									"quoteAllText": true,
-									"fileExtension": ".csv"
-								}
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"mappings": [
-									{
-										"source": {
-											"name": "Country",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Country",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "LandArea",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "LandArea",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "Population",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Population",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "GDP",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "GDP",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "Rural",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Rural",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "Internet",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Internet",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "BirthRate",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "BirthRate",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "DeathRate",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "DeathRate",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "ElderlyPop",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "ElderlyPop",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "LifeExpectancy",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "LifeExpectancy",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "FemaleLabor",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "FemaleLabor",
-											"type": "String"
-										}
-									},
-									{
-										"source": {
-											"name": "Unemployment",
-											"type": "String",
-											"physicalType": "String"
-										},
-										"sink": {
-											"name": "Unemployment",
-											"type": "String"
-										}
-									}
-								],
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "SourceCSV_Parameterized",
-								"type": "DatasetReference",
-								"parameters": {
-									"DatasetFileName": {
-										"value": "@pipeline().parameters.FileName",
-										"type": "Expression"
-									}
-								}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "TargetDelimited",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						]
-					}
-				],
-				"concurrency": 1,
-				"parameters": {
-					"FileName": {
-						"type": "string"
-					}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/SourceCSV_Parameterized')]",
-				"[concat(variables('factoryId'), '/datasets/TargetDelimited')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/PL_IncrementalLoad')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "New incremental Pipeline ",
-				"activities": [
-					{
-						"name": "lkp_oldwatermarkvalue",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": " select TableName,WatermarkValue as oldwatermarkvalue from dbo.watermarktable where [TableName] = 'orders'",
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "Azure_SQL_Target_DB_Watermark",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "lkp_newwatermarkvalue",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": " select max(InsertDateTime) as newwatermarkvalue from orders",
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "DS_SQL_SourceDB_Orders",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "Copy Data",
-						"type": "Copy",
-						"dependsOn": [
-							{
-								"activity": "lkp_oldwatermarkvalue",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "lkp_newwatermarkvalue",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": {
-									"value": "select * from orders where InsertDateTime >'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and InsertDateTime <= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
-									"type": "Expression"
-								},
-								"queryTimeout": "02:00:00"
-							},
-							"sink": {
-								"type": "AzureSqlSink"
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "DS_SQL_SourceDB_Orders",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "DS_SQL_TargetDB_Orders",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						]
-					},
-					{
-						"name": "SP_WatermarkTable",
-						"type": "SqlServerStoredProcedure",
-						"dependsOn": [
-							{
-								"activity": "Copy Data",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"storedProcedureName": "[[dbo].[spSetWatermark]",
-							"storedProcedureParameters": {
-								"NewTime": {
-									"value": {
-										"value": "@activity('lkp_newwatermarkvalue').output.firstrow.newwatermarkvalue",
-										"type": "Expression"
-									},
-									"type": "DateTime"
-								},
-								"TableName": {
-									"value": {
-										"value": "@activity('lkp_oldwatermarkvalue').output.FirstRow.tablename",
-										"type": "Expression"
-									},
-									"type": "String"
-								}
-							}
-						},
-						"linkedServiceName": {
-							"referenceName": "LS_Azure_SQL_Target",
-							"type": "LinkedServiceReference"
-						}
-					}
-				],
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/Azure_SQL_Target_DB_Watermark')]",
-				"[concat(variables('factoryId'), '/datasets/DS_SQL_SourceDB_Orders')]",
-				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Orders')]",
-				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/PL_IncrementalLoad_Dynamic')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"description": "New incremental Pipeline ",
-				"activities": [
-					{
-						"name": "lkp_oldwatermarkvalue",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": {
-									"value": "SELECT TableName,WatermarkValue as oldwatermarkvalue from dbo.watermarktable where [TableName] = '@{pipeline().parameters.TableName}'",
-									"type": "Expression"
-								},
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "Azure_SQL_Target_DB_Watermark",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "lkp_newwatermarkvalue",
-						"type": "Lookup",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": {
-									"value": "SELECT max(@{pipeline().parameters.WaterMarkColumn}) as newwatermarkvalue FROM @{pipeline().parameters.TableName}",
-									"type": "Expression"
-								},
-								"queryTimeout": "02:00:00"
-							},
-							"dataset": {
-								"referenceName": "DS_SQL_SourceDB_Orders",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						}
-					},
-					{
-						"name": "Copy Data",
-						"type": "Copy",
-						"dependsOn": [
-							{
-								"activity": "lkp_oldwatermarkvalue",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "lkp_newwatermarkvalue",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "AzureSqlSource",
-								"sqlReaderQuery": {
-									"value": "SELECT * FROM @{pipeline().parameters.TableName} where @{pipeline().parameters.WaterMarkColumn}>'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and @{pipeline().parameters.WaterMarkColumn}<= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
-									"type": "Expression"
-								},
-								"queryTimeout": "02:00:00"
-							},
-							"sink": {
-								"type": "AzureSqlSink"
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "DS_SQL_SourceDB_Orders",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "DS_SQL_TargetDB_Parameterized",
-								"type": "DatasetReference",
-								"parameters": {
-									"TableName": {
-										"value": "@pipeline().parameters.TableName",
-										"type": "Expression"
-									}
-								}
-							}
-						]
-					},
-					{
-						"name": "SP_WatermarkTable",
-						"type": "SqlServerStoredProcedure",
-						"dependsOn": [
-							{
-								"activity": "Copy Data",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"storedProcedureName": "[[dbo].[spSetWatermark]",
-							"storedProcedureParameters": {
-								"NewTime": {
-									"value": {
-										"value": "@activity('lkp_newwatermarkvalue').output.firstrow.newwatermarkvalue",
-										"type": "Expression"
-									},
-									"type": "DateTime"
-								},
-								"TableName": {
-									"value": {
-										"value": "@activity('lkp_oldwatermarkvalue').output.FirstRow.tablename",
-										"type": "Expression"
-									},
-									"type": "String"
-								}
-							}
-						},
-						"linkedServiceName": {
-							"referenceName": "LS_Azure_SQL_Target",
-							"type": "LinkedServiceReference"
-						}
-					}
-				],
-				"parameters": {
-					"TableName": {
-						"type": "string"
-					},
-					"WaterMarkColumn": {
-						"type": "string"
-					}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/Azure_SQL_Target_DB_Watermark')]",
-				"[concat(variables('factoryId'), '/datasets/DS_SQL_SourceDB_Orders')]",
-				"[concat(variables('factoryId'), '/datasets/DS_SQL_TargetDB_Parameterized')]",
-				"[concat(variables('factoryId'), '/linkedServices/LS_Azure_SQL_Target')]"
 			]
 		}
 	]

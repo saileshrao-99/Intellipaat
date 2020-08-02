@@ -7,10 +7,6 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "IntellipaatADFDemo"
 		},
-		"LS_AzureSQL_Source_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'LS_AzureSQL_Source'"
-		},
 		"LS_Azure_SQL_Target_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_Azure_SQL_Target'"
@@ -18,6 +14,22 @@
 		"LS_Blob_StorageAccountEUS2_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_Blob_StorageAccountEUS2'"
+		},
+		"LS_CosmosDB_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_CosmosDB'"
+		},
+		"AKV_Auth_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://KeyVaultIntellipaat.vault.azure.net/"
+		},
+		"LS_AzureSQL_Source_properties_typeProperties_connectionString_secretName": {
+			"type": "string",
+			"defaultValue": "adfauth"
+		},
+		"LS_CosmosDB_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "orderdb"
 		},
 		"containerUri": {
 			"type": "string",
@@ -46,14 +58,20 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
-					"LS_AzureSQL_Source_connectionString": {
-						"value": "[parameters('LS_AzureSQL_Source_connectionString')]"
-					},
 					"LS_Azure_SQL_Target_connectionString": {
 						"value": "[parameters('LS_Azure_SQL_Target_connectionString')]"
 					},
 					"LS_Blob_StorageAccountEUS2_connectionString": {
 						"value": "[parameters('LS_Blob_StorageAccountEUS2_connectionString')]"
+					},
+					"LS_CosmosDB_connectionString": {
+						"value": "[parameters('LS_CosmosDB_connectionString')]"
+					},
+					"AKV_Auth_properties_typeProperties_baseUrl": {
+						"value": "[parameters('AKV_Auth_properties_typeProperties_baseUrl')]"
+					},
+					"LS_CosmosDB_properties_typeProperties_database": {
+						"value": "[parameters('LS_CosmosDB_properties_typeProperties_database')]"
 					}
 				}
 			},
@@ -72,6 +90,9 @@
 				"parameters": {
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
+					},
+					"LS_AzureSQL_Source_properties_typeProperties_connectionString_secretName": {
+						"value": "[parameters('LS_AzureSQL_Source_properties_typeProperties_connectionString_secretName')]"
 					}
 				}
 			},
