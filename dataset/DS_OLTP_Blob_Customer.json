@@ -9,12 +9,27 @@
 		"type": "DelimitedText",
 		"typeProperties": {
 			"location": {
-				"type": "AzureBlobStorageLocation"
+				"type": "AzureBlobStorageLocation",
+				"fileName": "customer.txt",
+				"container": "source"
 			},
 			"columnDelimiter": ",",
 			"escapeChar": "\\",
 			"quoteChar": "\""
 		},
-		"schema": []
+		"schema": [
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			},
+			{
+				"type": "String"
+			}
+		]
 	}
 }
