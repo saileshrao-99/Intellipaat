@@ -1,0 +1,67 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "IntellipaatADFDemo"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_DataFlow')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_DF_Blob_PurchaseOrder",
+								"type": "DatasetReference"
+							},
+							"name": "PurchaseOrder"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_DF_Blob_Customer",
+								"type": "DatasetReference"
+							},
+							"name": "Customer"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DS_SQL_Metrics",
+								"type": "DatasetReference"
+							},
+							"name": "Output"
+						}
+					],
+					"transformations": [
+						{
+							"name": "PurchaseOrderProjection"
+						},
+						{
+							"name": "CustomerProjection"
+						},
+						{
+							"name": "JoinedStream"
+						},
+						{
+							"name": "Metrics"
+						}
+					],
+					"script": "source(output(\n\t\tPurchaseOrderID as string,\n\t\t{ CustomerCode} as integer,\n\t\tProductCode as string,\n\t\tEmployeeCode as string,\n\t\t{ PuchaseOrderDate} as string,\n\t\t{ Quantity} as integer,\n\t\t{ UnitPrice} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false) ~> PurchaseOrder\nsource(output(\n\t\tCustomerCode as short,\n\t\t{ CustomerName} as string,\n\t\t{ Address} as string,\n\t\t{ PhoneNumber} as integer\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false) ~> Customer\nPurchaseOrder select(mapColumn(\n\t\t{ CustomerCode},\n\t\tProductCode,\n\t\t{ Quantity}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> PurchaseOrderProjection\nCustomer select(mapColumn(\n\t\tCustomerCode,\n\t\t{ CustomerName}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> CustomerProjection\nPurchaseOrderProjection, CustomerProjection join({ CustomerCode} == CustomerCode,\n\tjoinType:'inner',\n\tbroadcast: 'auto')~> JoinedStream\nJoinedStream aggregate(groupBy({ CustomerCode},\n\t\tProductCode),\n\t{ Quantity} = sum({ Quantity})) ~> Metrics\nMetrics sink(input(\n\t\tCustomerCode as integer,\n\t\tProductCode as integer,\n\t\tQuantity as integer\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\ttruncate:true,\n\tformat: 'table',\n\tmapColumn(\n\t\tCustomerCode = { CustomerCode},\n\t\tProductCode,\n\t\tQuantity = { Quantity}\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Output"
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
