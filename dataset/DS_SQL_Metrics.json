@@ -1,0 +1,32 @@
+{
+	"name": "DS_SQL_Metrics",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_Azure_SQL_Target",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "CustomerCode",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ProductCode",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Quantity",
+				"type": "int",
+				"precision": 10
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Metric_ProductCustomerCount"
+		}
+	}
+}
