@@ -3,10 +3,25 @@
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
-			"sources": [],
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_DF_Blob_PurchaseOrder",
+						"type": "DatasetReference"
+					},
+					"name": "PurchaseOrder"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_DF_Blob_Customer",
+						"type": "DatasetReference"
+					},
+					"name": "Customer"
+				}
+			],
 			"sinks": [],
 			"transformations": [],
-			"script": ""
+			"script": "source(output(\n\t\tPurchaseOrderID as string,\n\t\t{ CustomerCode} as string,\n\t\tProductCode as string,\n\t\tEmployeeCode as string,\n\t\t{ PuchaseOrderDate} as string,\n\t\t{ Quantity} as string,\n\t\t{ UnitPrice} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false) ~> PurchaseOrder\nsource(output(\n\t\tCustomerCode as short,\n\t\t{ CustomerName} as string,\n\t\t{ Address} as string,\n\t\t{ PhoneNumber} as integer\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false) ~> Customer"
 		}
 	}
 }
