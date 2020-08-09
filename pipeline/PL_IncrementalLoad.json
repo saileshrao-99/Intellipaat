@@ -19,7 +19,8 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": " select TableName,WatermarkValue as oldwatermarkvalue from dbo.watermarktable where [TableName] = 'orders'",
-						"queryTimeout": "02:00:00"
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
 					},
 					"dataset": {
 						"referenceName": "Azure_SQL_Target_DB_Watermark",
@@ -43,7 +44,8 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": " select max(InsertDateTime) as newwatermarkvalue from orders",
-						"queryTimeout": "02:00:00"
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
 					},
 					"dataset": {
 						"referenceName": "DS_SQL_SourceDB_Orders",
@@ -83,7 +85,8 @@
 							"value": "select * from orders where InsertDateTime >'@{activity('lkp_oldwatermarkvalue').output.FirstRow.oldwatermarkvalue}' and InsertDateTime <= '@{activity('lkp_newwatermarkvalue').output.FirstRow.newwatermarkvalue}'",
 							"type": "Expression"
 						},
-						"queryTimeout": "02:00:00"
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
 					},
 					"sink": {
 						"type": "AzureSqlSink"

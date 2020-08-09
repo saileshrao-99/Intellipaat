@@ -1,0 +1,32 @@
+{
+	"name": "trigger1",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_IncrementalLoad",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Week",
+				"interval": 1,
+				"startTime": "2020-08-09T17:31:00.000Z",
+				"timeZone": "UTC",
+				"schedule": {
+					"hours": [
+						6
+					],
+					"weekDays": [
+						"Thursday"
+					]
+				}
+			}
+		}
+	}
+}
